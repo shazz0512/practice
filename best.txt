@@ -1,0 +1,81 @@
+ip a
+
+    2  sudo firewall-cmd --permanent --zone=public --add-rich-rule='rule family="ipv4" source address="0.0.0.0/0" protocol value="icmp" accept'
+    3  sudo firewall-cmd --reload
+    4  sudo firewall-cmd --permanent --zone=public --add-rich-rule='rule family="ipv4" source address="x.x.x.x" service name="ssh" accept'
+    5  sudo firewall-cmd --permanent --zone=public --add-rich-rule='rule family="ipv4" source address="192.168.1.0/24" service name="ssh" accept'
+    6  sudo firewall-cmd --reload
+    7  sudo firewall-cmd --permanent --zone=public --add-service=http
+    8  sudo firewall-cmd --permanent --zone=public --add-service=https
+    9  sudo firewall-cmd --reload
+	
+---------------------------
+alert tcp any any -> any 8000 (msg:"virus.py is downloaded";content:"hacked";sid:1000001;rev:1;)
+alert icmp any 80 -> 192.168.145.142 any (msg:"large ping packet detected";dsize:>256;sid:1000002;rev:1;)
+alert tcp any any -> $HOME_NET 22 (msg:"Incoming SSH request detected";sid:1000003;rev:1;)
+alert tcp $HOME_NET any -> any 22 (msg:"Outgoing SSH request detected";sid:1000004;rev:1;)
+alert icmp $HOME_NET any -> any any (msg:"Traceroute detected";ttl:<3;sid:1000005;rev:1;)
+alert tcp any any -> 192.168.145.142 any (msg:"Possible NMAP scan";flow:stateless;flags:S;sid:1000006; rev:1;)
+alert tcp any any -> 192.168.145.142 any (msg:"Possible NMAP scan";flow:stateless;flags:S;detection_filter:track by src,count 10,seconds 1;sid:1000007; rev:1;)
+
+
+1.ping -s 260 pfsensenat ip [on kali]
+2.ping -t 2 kali ip [on client]
+3.sudo nmap -sScpfsensenat ip [kali]
+
+---------
+cat /proc/sys/net/ipv4/ip_forward
+   12  echo 1 > /proc/sys/net/ipv4/ip_forward
+   13  vi /etc/sysctl.conf               edit in file-net.ipv4.ip_forward=1
+   14  systemctl status iptables
+   15  yum install iptables-services iptables-utils
+   16  systemctl start iptables
+   17  systemctl status iptables
+   18  systemctl enable iptables
+   19  iptables -L
+   20  iptables -t filter -L
+   21  iptables -F
+   22  systemctl restart iptables
+   23  ip a
+   24  iptables -t nat -A POSTROUTING -s 10.10.10.0/24 -o ens33 -j MASQUERADE
+   25  iptables -t nat -L
+   26  ping www.google.com
+These rules assume that the default policy of the INPUT chain is set to ACCEPT
+1>sudo iptables -A INPUT -p tcp --dport 22 -s 196.1.113.4 -j ACCEPT
+sudo iptables -A INPUT -p tcp --dport 22 -j DROP
+2>sudo iptables -A INPUT -p tcp --dport 80 -j ACCEPT
+sudo iptables -A INPUT -p tcp --dport 443 -j ACCEPT
+3>sudo iptables -A INPUT -p tcp --dport 22 -j LOG --log-prefix "SSH Traffic: "
+sudo iptables -A INPUT -p tcp --dport 22 -j ACCEPT
+
+   27 iptables -D INPUT 4
+--------------
+yum install squid
+   38  cd /etc/squid/
+   39  ll
+   40  vi squid.conf
+   41  systemctl start squid
+   42  systemctl status squid
+http port 3128
+uncomment cache_dir
+visible_hostname proxy.hpcsa.lab
+   41  systemctl start squid
+   42  systemctl status squid
+    
+	check hostonly ip of master come to linux client ->browswer-> proxy setting ->http proxy = write ip -> port 3128-> socket-hosts same ->ok
+	43 vi /etc/squid/squid.conf
+	ACL section
+	acl localnet src 192.168.40.0/24
+   acl gov_domain dstdomain .gov
+   
+    locate the http_access:
+	http_access allow localnet
+ http_access deny !gov_domain
+ 
+    44 sudo systemctl restart squid
+
+
+
+
+
+
